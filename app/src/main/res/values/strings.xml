@@ -3,5 +3,5 @@
     <string name="email">email</string>
     <string name="logind">Log in</string>
     <string name="password">pass</string>
-    <string name="new_event">New event</string>
+    <string name="new_event">New event +</string>
 </resources>

@@ -1,7 +1,10 @@
 package com.dev.baqari.myapplication.view
 
 import android.content.Context
-import android.graphics.*
+import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.Paint
+import android.graphics.Rect
 import android.support.v4.view.GestureDetectorCompat
 import android.util.AttributeSet
 import android.util.TypedValue
@@ -11,21 +14,21 @@ import android.view.View
 import com.dev.baqari.myapplication.R
 
 
-class WeekView(context: Context, attrs: AttributeSet?) : View(context, attrs), GestureDetector.OnGestureListener {
-    private var mWeekItemHeight = 0
+class WeekView : View, GestureDetector.OnGestureListener {
+    private var mWeekItemHeight = 0f
     private var mDisplayWidth = 0
     private var mDisplayHeight = 0
-    private var mScrollY = 10.toDip()
+    private var mScrollY = 10.toDp()
     private val mWeekItemPaint: Paint by lazy {
         Paint()
     }
-    private val mTouchItemPaint: Paint by lazy {
+    private val mNewEventPaint: Paint by lazy {
         Paint()
     }
-    private val mWeekHourTextPaint: Paint by lazy {
+    private val mWeekTimeTextPaint: Paint by lazy {
         Paint()
     }
-    private val mTouchTextPaint: Paint by lazy {
+    private val mNewEventTextPaint: Paint by lazy {
         Paint()
     }
     private val mGestureDecector: GestureDetectorCompat by lazy {
@@ -37,15 +40,36 @@ class WeekView(context: Context, attrs: AttributeSet?) : View(context, attrs), G
         TouchItem(0f, 0f)
     }
     private var mOnLongPressed = false
+    private var mRadius = 10f
+    private var mNewEventText = ""
 
-    init {
-        mWeekItemPaint.color = Color.parseColor("#e4e4e4")
-        mWeekHourTextPaint.textSize = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, 14f, resources.displayMetrics)
-        mWeekHourTextPaint.color = Color.BLACK
-        mTouchItemPaint.color = Color.RED
-        mTouchTextPaint.color = Color.WHITE
-        mTouchTextPaint.textSize = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, 14f, resources.displayMetrics)
-        mWeekItemHeight = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 70f, resources.displayMetrics).toInt()
+    constructor(context: Context, attrs: AttributeSet?) : super(context, attrs) {
+        val a = context.obtainStyledAttributes(attrs, R.styleable.WeekView, 0, 0)
+
+        mWeekItemPaint.color = a.getColor(R.styleable.WeekView_weekItemColor, Color.parseColor("#e4e4e4"))
+        mWeekTimeTextPaint.color = a.getColor(R.styleable.WeekView_weekItemTimeColor, Color.BLACK)
+        mNewEventPaint.color = a.getColor(R.styleable.WeekView_newEventColor, Color.RED)
+        mNewEventTextPaint.color = a.getColor(R.styleable.WeekView_newEventTextColor, Color.WHITE)
+
+        val weekItemTimeTextSize = a.getDimension(R.styleable.WeekView_weekItemTimeTextSize, 14f)
+        mWeekTimeTextPaint.textSize = weekItemTimeTextSize.toSp()
+
+        val newEventTextSize = a.getDimension(R.styleable.WeekView_newEventTextSize, 14f)
+        mNewEventTextPaint.textSize = newEventTextSize.toSp()
+
+        val weekItemHeight = a.getDimension(R.styleable.WeekView_weekitemHeight, 70f)
+        mWeekItemHeight = weekItemHeight.toDp()
+
+        val radius = a.getDimension(R.styleable.WeekView_weekItemRoundRadius, 10f)
+        mRadius = radius
+
+        val newEventText = a.getString(R.styleable.WeekView_newEventText)
+        if (newEventText != null)
+            mNewEventText = newEventText
+        else
+            mNewEventText = resources.getString(R.string.new_event)
+
+        a.recycle()
     }
 
     override fun onDraw(canvas: Canvas?) {
@@ -54,47 +78,38 @@ class WeekView(context: Context, attrs: AttributeSet?) : View(context, attrs), G
         (0..23).forEachIndexed { it, i ->
             val top = ((it * mWeekItemHeight) + mScrollY + 5)
             var bottom = (((it * mWeekItemHeight) + mWeekItemHeight + mScrollY))
-            val right = (mDisplayWidth - Padding.RIGHT.value.toDip())
-            val left = Padding.LEFT.value.toDip()
+            val right = (mDisplayWidth - Padding.RIGHT.value.toDp())
+            val left = Padding.LEFT.value.toDp()
             if (i == 0 && top > 15) {
                 mScrollY = 15f
                 val rect = Rect(left.toInt(), (((it * mWeekItemHeight) + 20f).toInt()), right.toInt(), ((((it * mWeekItemHeight) + mWeekItemHeight + 15f).toInt())))
-                canvas?.drawPath(rect.toPath(10f), mWeekItemPaint)
-                canvas?.drawText(it.toHour(), (left / 5), ((it * mWeekItemHeight) + 40f), mWeekHourTextPaint)
+                canvas?.drawPath(rect.toPath(mRadius), mWeekItemPaint)
+                canvas?.drawText(it.toHour(), (left / 5), ((it * mWeekItemHeight) + 25.toDp()), mWeekTimeTextPaint)
                 onTouchEvent(null)
             } else if (i == 23 && bottom < mDisplayHeight) {
                 mBottomOverlayed = false
-                bottom = (((it * mWeekItemHeight) + mWeekItemHeight - 20.toDip()))
-
+                bottom = (mDisplayHeight - 100).toDp()
                 val rect = Rect(left.toInt(), top.toInt(), right.toInt(), bottom.toInt())
-                canvas?.drawPath(rect.toPath(10f), mWeekItemPaint)
-                canvas?.drawText(it.toHour(), (left / 5), top + 20f, mWeekHourTextPaint)
+                canvas?.drawPath(rect.toPath(mRadius), mWeekItemPaint)
+                canvas?.drawText(it.toHour(), (left / 5), top + 15.toDp(), mWeekTimeTextPaint)
                 onTouchEvent(null)
             } else {
                 val rect = Rect(left.toInt(), top.toInt(), right.toInt(), bottom.toInt())
-                canvas?.drawPath(rect.toPath(10f), mWeekItemPaint)
-                canvas?.drawText(it.toHour(), (left / 5), top + 15f, mWeekHourTextPaint)
+                canvas?.drawPath(rect.toPath(mRadius), mWeekItemPaint)
+                canvas?.drawText(it.toHour(), (left / 5), top + 15.toDp(), mWeekTimeTextPaint)
             }
 
             mLocationMap.add(top)
         }
         if (mOnLongPressed) {
-            val rect = Rect(Padding.LEFT.value.toDip().toInt(),
+            val rect = Rect(Padding.LEFT.value.toDp().toInt(),
                     (mTouchItem.top).toInt(),
-                    ((mDisplayWidth - Padding.RIGHT.value.toDip()).toInt()),
+                    ((mDisplayWidth - Padding.RIGHT.value.toDp()).toInt()),
                     (mTouchItem.bottom - 5).toInt())
-            canvas?.drawPath(rect.toPath(10f), mTouchItemPaint)
-            canvas?.drawText(resources.getString(R.string.new_event) + " +", left + 70.toDip(), mTouchItem.top + 30, mTouchTextPaint)
+            canvas?.drawPath(rect.toPath(mRadius), mNewEventPaint)
+            canvas?.drawText(mNewEventText, left + 70.toDp(), mTouchItem.top + 30, mNewEventTextPaint)
             mOnLongPressed = false
         }
-    }
-
-    fun Int.toHour(): String {
-        return (if (this >= 10) this.toString() else "0" + this.toString()) + ":00"
-    }
-
-    fun Int.toDip(): Float {
-        return TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, this.toFloat(), resources.displayMetrics)
     }
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
@@ -161,23 +176,17 @@ class WeekView(context: Context, attrs: AttributeSet?) : View(context, attrs), G
             return false
         }
     }
+
+    fun Int.toDp(): Float {
+        return TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, this.toFloat(), resources.displayMetrics)
+    }
+
+    fun Float.toDp(): Float {
+        return TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, this, resources.displayMetrics)
+    }
+
+    fun Float.toSp(): Float {
+        return TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, this, resources.displayMetrics)
+    }
+
 }
-
-fun Rect.toPath(radius: Float): Path {
-    val path = Path()
-
-    path.moveTo(this.left + radius / 2, this.top.toFloat())
-    path.lineTo(this.right - radius / 2, this.top.toFloat())
-    path.quadTo(this.right.toFloat(), this.top.toFloat(), this.right.toFloat(), this.top + radius / 2)
-    path.lineTo(this.right.toFloat(), this.bottom - radius / 2)
-    path.quadTo(this.right.toFloat(), this.bottom.toFloat(), this.right - radius / 2, this.bottom.toFloat())
-    path.lineTo(this.left + radius / 2, this.bottom.toFloat())
-    path.quadTo(this.left.toFloat(), this.bottom.toFloat(), this.left.toFloat(), this.bottom - radius / 2)
-    path.lineTo(this.left.toFloat(), this.top + radius / 2)
-    path.quadTo(this.left.toFloat(), this.top.toFloat(), this.left + radius / 2, this.top.toFloat())
-    path.close()
-
-    return path
-}
-
-

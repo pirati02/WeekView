@@ -4,9 +4,9 @@ import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 
 
-class LoginActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity() {
     override fun onCreate(saveInstance: Bundle?) {
         super.onCreate(saveInstance)
-        setContentView(R.layout.activity_login)
+        setContentView(R.layout.activity_main)
     }
 }

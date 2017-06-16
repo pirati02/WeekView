@@ -1,0 +1,13 @@
+<resources>
+    <declare-styleable name="WeekView">
+        <attr name="weekItemColor" format="color" />
+        <attr name="newEventTextColor" format="color" />
+        <attr name="newEventColor" format="color"/>
+        <attr name="weekItemTimeColor" format="color" />
+        <attr name="weekItemTimeTextSize" format="dimension" />
+        <attr name="weekitemHeight" format="dimension" />
+        <attr name="newEventTextSize" format="dimension" />
+        <attr name="newEventText" format="string" />
+        <attr name="weekItemRoundRadius" format="dimension"/>
+    </declare-styleable>
+</resources>
